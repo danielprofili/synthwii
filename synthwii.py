@@ -1,7 +1,14 @@
 import mido
 import time
+import os, sys, json
+
+CFG_PATH = os.path.join(sys.path[0], 'config.json')
 
 def setup_midi():
+    cfg = load_config()
+    if cfg is not None:
+        return cfg['interface']
+
     outputs = mido.get_output_names()
     if len(outputs) == 0:
         print('Error: no MIDI outputs found!')
@@ -22,7 +29,30 @@ def setup_midi():
         if ans < 0 or ans >= len(outputs):
             print('Invalid choice')
         else:
+            # write choice to config
+            write_config('interface', outputs[ans])
             return outputs[ans]
+
+
+def load_config():
+    # check for configuration file
+    if os.path.exists(CFG_PATH):
+        with open(CFG_PATH) as f:
+            cfg = json.load(f)
+        return cfg
+    else:
+        # no config, so better make it
+        print('Creating empty config file at %s' % CFG_PATH)
+        with open(CFG_PATH, 'x') as f:
+            json.dump({'interface' : ''}, f)
+            return
+            
+def write_config(key, val):
+    with open(CFG_PATH) as f:
+        cfg = json.load(f)
+    cfg[key] = val
+    with open(CFG_PATH, 'w') as f:
+        json.dump(cfg, f)
 
 # main routine
 if __name__ == '__main__':
